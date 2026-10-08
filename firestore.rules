@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signed() { return request.auth != null; }
+  function own(uid) { return signed() && request.auth.uid == uid; }
+  function member(fid) { return signed() && exists(/databases/$(database)/documents/families/$(fid)/members/$(request.auth.uid)); }
+  match /users/{uid} {
+   allow read: if own(uid); allow write: if false;
+   match /summaries/{date} { allow read: if own(uid); allow write: if false; }
+   match /routineDays/{day} { allow read: if own(uid); allow write: if false; }
+   match /ledger/{entry} { allow read: if own(uid); allow write: if false; }
+   match /devices/{device} {
+    allow read, delete: if own(uid);
+    allow create, update: if own(uid) && request.resource.data.keys().hasOnly(['token']) && request.resource.data.token is string && request.resource.data.token.size() < 4096;
+   }
+  }
+  match /families/{fid} {
+   allow read: if member(fid); allow write: if false;
+   match /{collection}/{doc} { allow read: if member(fid) && collection in ['members','tasks','products','vouchers','decisions','moods']; allow write: if false; }
+  }
+  match /privateLists/{listId} {
+   allow read: if signed() && request.auth.uid in resource.data.participantIds; allow write: if false;
+   match /items/{itemId} { allow read: if signed() && request.auth.uid in get(/databases/$(database)/documents/privateLists/$(listId)).data.participantIds; allow write: if false; }
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
+}

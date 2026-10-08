@@ -8,3 +8,11 @@
 .externalNativeBuild
 .cxx
 app/google-services.json
+**/build/
+functions/node_modules/
+.firebase/
+*-debug.log
+.env*
+*.keystore
+*.jks
+local.properties

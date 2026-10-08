@@ -1,10 +1,13 @@
-name: Build Android APK
+name: Android and Firebase checks
 on:
   push:
-    branches: [ main ]
+    branches: [main, 'codex/**']
+  pull_request:
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  build:
+  android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,8 +18,39 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - run: gradle assembleDebug
+      - name: Firebase client configuration
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          else
+            echo 'No Firebase config supplied: the APK will display setup guidance.'
+          fi
+      - run: gradle assembleDebug testDebugUnitTest lintDebug
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: Family-App-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Family-App-debug-and-checks
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/reports/
+  firebase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+        working-directory: functions
+      - run: npm test
+        working-directory: functions
+      - run: npx firebase emulators:exec --only firestore --project demo-familyapp 'npm run test:integration'
+        working-directory: functions
