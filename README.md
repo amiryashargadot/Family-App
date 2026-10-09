@@ -4,9 +4,12 @@ Native Kotlin / Jetpack Compose Android client and Firebase backend. Hebrew RTL,
 
 ## Current status
 
-The V1 source is implemented. A successful build of this new version has NOT yet been verified. Production Firebase functions/rules have NOT been deployed. This source archive is not an operational app delivery.
+The native Android app and Firebase backend have passed CI at source commit `6d707009568e2a9ed958cdd0d2f61462489bfff5`:
+https://github.com/amiryashargadot/Family-App/actions/runs/37856893422
 
-The last Android compiler run reported two issues: the Compose function type annotation and access to HttpsCallableResult.data. They have been changed to `@Composable () -> Unit` and `getData()`. A successful subsequent build has not been observed. Test sources were restored after the temporary build environment disappeared; five pure Node tests were rerun successfully. The current Android and integration suites still require a full rerun.
+`assembleDebug`, `testDebugUnitTest` (4 tests), `lintDebug` (0 errors, 9 warnings), 5 Node tests and 11 Firestore Emulator tests passed. The artifact contains the debug APK and reports.
+
+**The current APK has no Firebase configuration and displays setup guidance. It is not ready for family use.** Configure `GOOGLE_SERVICES_JSON` as a repository secret and rebuild, then deploy Firebase functions/rules and enable Anonymous Authentication. Production deployment, FCM delivery and two physical phones have not been verified. Preserve a private signing key before real use; CI-generated debug keys are not stable across runs.
 
 ## Included features
 
